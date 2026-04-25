@@ -1,0 +1,6 @@
+{
+  "name": "لقاحي - Luqahi",
+  "description": "نظام تسجيل وتتبع لقاحات الأطفال في اليمن، يعمل بدون إنترنت ويدعم التعرف الصوتي والصوري.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["offline-storage", "biometrics-mock", "vaccination-tracking"]
+}
