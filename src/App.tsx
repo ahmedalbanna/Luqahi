@@ -24,14 +24,16 @@ import {
   Camera,
   Mic,
   ChevronRight,
-  Database
+  Database,
+  BarChart2,
+  MessageSquare
 } from 'lucide-react';
 import { db, type Child, type VaccinationRecord } from './db';
 import { VACCINATION_SCHEDULE } from './constants';
 import { generateUuid, cn } from './utils';
 
 // Views
-type View = 'dashboard' | 'register' | 'search' | 'profile' | 'settings';
+type View = 'dashboard' | 'register' | 'search' | 'profile' | 'settings' | 'analytics' | 'reminders';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -59,6 +61,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans mb-20 bg-slate-50 text-slate-900">
+      <Onboarding onComplete={() => console.log('onboarding complete')} />
       {/* Header */}
       <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-10">
         <div className="max-w-md mx-auto flex items-center justify-between">
@@ -90,14 +93,17 @@ export default function App() {
         {currentView === 'search' && <SearchPage onChildClick={navigateToProfile} />}
         {currentView === 'profile' && selectedChildUuid && <ChildProfile uuid={selectedChildUuid} onBack={() => setCurrentView('dashboard')} />}
         {currentView === 'settings' && <SettingsPage syncCount={syncCount} onRefresh={refreshStats} />}
+        {currentView === 'analytics' && <AnalyticsPage />}
+        {currentView === 'reminders' && <RemindersPage />}
       </main>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-2 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         <div className="max-w-md mx-auto flex justify-around items-center">
           <NavButton active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} icon={Users} label="الرئيسية" />
-          <NavButton active={currentView === 'register'} onClick={() => setCurrentView('register')} icon={UserPlus} label="تسجيل" />
           <NavButton active={currentView === 'search'} onClick={() => setCurrentView('search')} icon={Search} label="بحث" />
+          <NavButton active={currentView === 'analytics'} onClick={() => setCurrentView('analytics')} icon={BarChart2} label="إحصائيات" />
+          <NavButton active={currentView === 'reminders'} onClick={() => setCurrentView('reminders')} icon={MessageSquare} label="تنبيهات" />
           <NavButton active={currentView === 'settings'} onClick={() => setCurrentView('settings')} icon={Database} label="البيانات" />
         </div>
       </nav>
@@ -211,3 +217,6 @@ import { RegistrationForm } from './components/RegistrationForm';
 import { SearchPage } from './components/SearchPage';
 import { ChildProfile } from './components/ChildProfile';
 import { SettingsPage } from './components/SettingsPage';
+import { AnalyticsPage } from './components/AnalyticsPage';
+import { RemindersPage } from './components/RemindersPage';
+import { Onboarding } from './components/Onboarding';

@@ -10,12 +10,13 @@ import {
   QrCode,
   Download,
   Share2,
-  MapPin
+  MapPin,
+  Bell
 } from 'lucide-react';
 import { db, type Child, type VaccinationRecord } from '../db';
 import { VACCINATION_SCHEDULE } from '../constants';
 import { getStatusColor, cn } from '../utils';
-import { format, isBefore, parseISO } from 'date-fns';
+import { format, isBefore, parseISO, addDays } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
 
 export function ChildProfile({ uuid, onBack }: { uuid: string, onBack: () => void }) {
@@ -56,6 +57,40 @@ export function ChildProfile({ uuid, onBack }: { uuid: string, onBack: () => voi
     });
     
     loadData();
+  };
+
+  const handleSetReminder = async (record: VaccinationRecord, daysConfig: string) => {
+    if (!daysConfig) return;
+    if (!child?.phone) {
+      alert("الطفل ليس لديه رقم هاتف مسجل للتواصل.");
+      return;
+    }
+    
+    const days = parseInt(daysConfig);
+    
+    await db.vaccinations.update(record.id!, {
+      customReminderDays: days,
+      isSynced: false
+    });
+
+    const existing = await db.notifications.toArray();
+    const toDelete = existing.filter(n => n.recordId === record.id).map(n => n.id!);
+    await db.notifications.bulkDelete(toDelete);
+
+    const now = Date.now();
+    await db.notifications.add({
+      childUuid: child.uuid,
+      recordId: record.id,
+      type: 'SMS',
+      phone: child.phone,
+      message: `تذكير: لقاح مجدول لـ ${child.fullName} بتاريخ ${record.dateScheduled}.`,
+      scheduledFor: format(addDays(new Date(record.dateScheduled), -days), 'yyyy-MM-dd'),
+      status: 'QUEUED',
+      createdAt: now
+    });
+    
+    loadData();
+    alert("تم تفعيل التذكير المخصص بنجاح");
   };
 
   if (!child) return <div className="p-10 text-center">جاري التحميل...</div>;
@@ -162,6 +197,22 @@ export function ChildProfile({ uuid, onBack }: { uuid: string, onBack: () => voi
                             ? `تم الإعطاء: ${dose.dateGiven}` 
                             : `الموعد: ${dose.dateScheduled}`}
                         </p>
+                        
+                        {dose.status === 'PENDING' && (
+                          <div className="mt-2 text-xs flex items-center gap-2 text-slate-400 font-bold" onClick={e => e.stopPropagation()}>
+                            <Bell className="w-3.5 h-3.5" />
+                            <select 
+                              className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none text-slate-600"
+                              value={dose.customReminderDays?.toString() || ''}
+                              onChange={e => handleSetReminder(dose, e.target.value)}
+                            >
+                              <option value="">تذكير...</option>
+                              <option value="1">قبل يوم</option>
+                              <option value="3">قبل 3 أيام</option>
+                              <option value="7">قبل أسبوع</option>
+                            </select>
+                          </div>
+                        )}
                       </div>
 
                       <div className={cn(
